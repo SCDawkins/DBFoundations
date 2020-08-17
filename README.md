@@ -22,6 +22,8 @@ Select
   Order By 2, 1
 Go
 
+
+
 1.	Explain when you would use a SQL View.
 A SQL View is a virtual table, which is based on SQL SELECT query. A view references one or more existing database tables or other views. It is the snap shot of the database whereas a stored procedure is a group of Transact-SQL statements compiled into a single execution plan.
 View is simple showcasing data stored in the database tables whereas a stored procedure is a group of statements that can be executed.
@@ -77,13 +79,14 @@ There are three types (scalar, table valued and inline mutlistatement)  UDF and 
 UDF has a big limitation; by definition it cannot change the state of the database. What I mean by this you cannot perform data manipulation operation inside UDF (INSERT, UPDATE , DELETE) etc. 
 
 
+
+
 /********************************* Questions and Answers *********************************/
 'NOTES------------------------------------------------------------------------------------ 
  1) You can use any name you like for you views, but be descriptive and consistent
  2) You can use your working code from assignment 5 for much of this assignment
  3) You must use the BASIC views for each table after they are created in Question 1
-------------------------------------------------------------------------------------------'
-
+------------------------------------------------------------------------------------------
 
 -- Question 1 (5 pts): How can you create BACIC views to show data from each table in the database.
 -- NOTES: 1) Do not use a *, list out each column!
@@ -181,16 +184,17 @@ Select * From vvEmployees
 -- Beverages,Chang,19.00
 -- Beverages,Chartreuse verte,18.00
 
-Select 
-    C.CategoryName, 
-	P.ProductName, 
-	P.UnitPrice 
-  From Categories As C 
-    Inner Join Products As P
-    On C.CategoryID = P.ProductID
-  Order by 1, 2
-Go
+--Select 
+--    C.CategoryName, 
+--	P.ProductName, 
+--	P.UnitPrice 
+--  From vvCategories As C 
+--    Inner Join vvProducts As P
+--    On C.CategoryID = P.ProductID
+--  Order by 1, 2
+--Go
 
+go
 Create --Drop
 View vvProductsByCategories
 As
@@ -198,9 +202,9 @@ As
     C.CategoryName, 
 	P.ProductName, 
 	P.UnitPrice 
-  From Categories As C 
-    Inner Join Products As P
-    On C.CategoryID = P.ProductID
+  From vvCategories As C 
+    Inner Join vvProducts As P
+    On C.CategoryID = P.CategoryID
   Order by 1, 2
 Go
 
@@ -225,8 +229,8 @@ Select Top 1000000000
   P.ProductName, 
   I.InventoryDate, 
   I.[Count]
-From Products as P
-  Inner Join Inventories As I  
+From vvProducts as P
+  Inner Join vvInventories As I  
   On P.ProductID = I.ProductID
 Order By 
   InventoryDate, 
@@ -253,8 +257,8 @@ As
 Select Distinct Top 100000000 
     I.InventoryDate, 
 	[EmployeeName] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
-  From Inventories As I  
-    Inner Join Employees As E 
+  From vvInventories As I  
+    Inner Join vvEmployees As E 
     On I.EmployeeID = E.EmployeeID 
   Order By InventoryDate, EmployeeName
 Go
@@ -272,7 +276,7 @@ Go
 -- Beverages,Chai,2017-02-01,52
 -- Beverages,Chai,2017-03-01,54
 
-Create 
+Create --Drop
 View vvInventoriesByProductsByCategories
 As
 Select Top 1000000000
@@ -280,11 +284,11 @@ Select Top 1000000000
        P.ProductName, 
 	   I.InventoryDate, 
 	   I.[Count]
-  From  Inventories As I
-    Inner Join Products As P 
-    On I.InventoryID = P.ProductID
-    Inner Join Categories As C
-    On C.CategoryID = P.ProductID
+  From  vvInventories As I
+    Inner Join vvProducts As P 
+    On I.ProductID = P.ProductID
+    Inner Join vvCategories As C
+    On C.CategoryID = P.CategoryID
  Order By 1, 2, 3, 4 
 Go
 
@@ -317,11 +321,11 @@ Go
 	I.[Count], 
 	[EmployeeName] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
    From Employees As E 
-    Inner Join Inventories As I
+    Inner Join vvInventories As I
       On I.EmployeeID = E.EmployeeID 
-	Inner Join Products As P
+	Inner Join vvProducts As P
 	   On I.ProductID = P.ProductID
-    Inner Join Categories As C
+    Inner Join vvCategories As C
       On P.CategoryID = C.CategoryID 
 	Order By 3, 1, 2, 4
 Go
@@ -349,13 +353,13 @@ Select Top 10000000000
 	I.[Count], 
 	[EmployeeName] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
    From Inventories As I 
-    Inner Join Employees As E 
+    Inner Join vvEmployees As E 
       On I.EmployeeID = E.EmployeeID 
-	Inner Join Products As P
+	Inner Join vvProducts As P
 	   On P.ProductID = I.ProductID
-    Inner Join Categories As C
+    Inner Join vvCategories As C
       On C.CategoryID = P.CategoryID
-	  Where I.ProductID in (Select ProductID from Products Where ProductName In ('Chai', 'Chang'))
+	  Where I.ProductID in (Select ProductID from vvProducts Where ProductName In ('Chai', 'Chang'))
 	Order By 3, 1, 2, 4
 Go
 
@@ -374,8 +378,8 @@ Go
 Select 
   [Manager] = M.EmployeeFirstName + ' ' + M.EmployeeLastName,
   [Employees] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
- From Employees As E 
-  Inner Join Employees As M
+ From vvEmployees As E 
+  Inner Join vvEmployees As M
    On M.EmployeeID = E.ManagerID
   Order By 1, 2
 Go
@@ -386,8 +390,8 @@ As
 Select Top 1000000
   [Manager] = M.EmployeeFirstName + ' ' + M.EmployeeLastName,
   [Employees] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
- From Employees As E 
-  Inner Join Employees As M
+ From vvEmployees As E 
+  Inner Join vvEmployees As M
    On M.EmployeeID = E.ManagerID
   Order By 1, 2
 Go
@@ -398,53 +402,32 @@ Go
 -- Question 10 (10 pts): How can you create one view to show all the data from all four 
 -- BASIC Views?
 
+Create View
+vvInventoriesByProductsByCategoriesByEmployees
+As
+ Select Top 10000000
+  C.CategoryID,
+  C.CategoryName,
+  P.ProductID,
+  P.ProductName,
+  P.UnitPrice,
+  I.InventoryID,
+  I.InventoryDate,
+  I.[Count],
+  E.EmployeeID,
+  [Manager] = M.EmployeeFirstName + ' ' + M.EmployeeLastName,
+  [Employees] = E.EmployeeFirstName + ' ' + E.EmployeeLastName
+  From  vvInventories As I
+    Inner Join vvProducts As P 
+    On I.ProductID = P.ProductID
+    Inner Join vvCategories As C
+    On C.CategoryID = P.CategoryID
+	Inner Join vvEmployees As E
+	On I.EmployeeID = E.EmployeeID
+	Inner Join vvEmployees As M
+	On E.ManagerID = M.EmployeeID
+Order By 1, 3, 6, 9
 
-
--- Here is an example of some rows selected from the view:
--- CategoryID,CategoryName,ProductID,ProductName,UnitPrice,InventoryID,InventoryDate,Count,EmployeeID,Employee,Manager
--- 1,Beverages,1,Chai,18.00,1,2017-01-01,72,5,Steven Buchanan,Andrew Fuller
--- 1,Beverages,1,Chai,18.00,78,2017-02-01,52,7,Robert King,Steven Buchanan
--- 1,Beverages,1,Chai,18.00,155,2017-03-01,54,9,Anne Dodsworth,Steven Buchanan
-
-Select 
-  [Manager ID] = IsNull(Mgr.EmployeeId, 0)
- ,[Manager] = IIF(IsNull(Mgr.EmployeeId, 0) = 0, 'General Manager', Emp.EmployeeFirstName + ' ' +  Mgr.employeeLastName)
- ,[Employee ID] =  Emp.EmployeeID
- ,[Employee Name] =  Emp.EmployeeFirstName + ' ' + Emp.EmployeeLastName 
- From Employees as Emp
-  Left Join Employees Mgr
-   On Emp.ManagerID = Mgr.EmployeeID 
- Order By 1,3;   
-go
-
-
-Select *
-From vvCategories, vvProducts, vvInventories, vvEmployees
-Go
-
-Select 
-CategoryID,
-CategoryName,
-ProductID,
-ProductName,
-UnitPrice,
-InventoryID,
-InventoryDate,
-[Count],
-EmployeeID,
-Employee,
-Manager
-From vvCategories, vvProducts, vvInventories, vvEmployees
-Go
-
-Select * From vvCategories
-Select * From vvProducts
-Select * From vvInventories
-Select * From vvEmployees
-
-Select * From [dbo].[vvInventoriesByProductsByCategoriesByEmployees]
-
--- Test your Views (NOTE: You must change the names to match yours as needed!)
 
 Select * From [dbo].[vvInventoriesByProductsByCategoriesByEmployees]
 
@@ -464,4 +447,22 @@ Select * From [dbo].[vvInventoriesForChaiAndChangByEmployees]
 Select * From [dbo].[vvEmployeesByManager]
 Select * From [dbo].[vvInventoriesByProductsByCategoriesByEmployees]
 /***************************************************************************************/
+
+
+-- Here is an example of some rows selected from the view:
+-- CategoryID,CategoryName,ProductID,ProductName,UnitPrice,InventoryID,InventoryDate,Count,EmployeeID,Employee,Manager
+-- 1,Beverages,1,Chai,18.00,1,2017-01-01,72,5,Steven Buchanan,Andrew Fuller
+-- 1,Beverages,1,Chai,18.00,78,2017-02-01,52,7,Robert King,Steven Buchanan
+-- 1,Beverages,1,Chai,18.00,155,2017-03-01,54,9,Anne Dodsworth,Steven Buchanan
+
+Select 
+  [Manager ID] = IsNull(Mgr.EmployeeId, 0)
+ ,[Manager] = IIF(IsNull(Mgr.EmployeeId, 0) = 0, 'General Manager', Emp.EmployeeFirstName + ' ' +  Mgr.employeeLastName)
+ ,[Employee ID] =  Emp.EmployeeID
+ ,[Employee Name] =  Emp.EmployeeFirstName + ' ' + Emp.EmployeeLastName 
+ From vvEmployees as Emp
+  Left Join vvEmployees Mgr
+   On Emp.ManagerID = Mgr.EmployeeID 
+ Order By 1,3;   
+go
 
